@@ -124,7 +124,7 @@ class DisjointSets
     }
 }
 
-function scanWalkabilityRightwards(walkable: Mask, width: number, height: number): DisjointSets[]
+function scanWalkabilityRightwards(walkable: Mask, width: number, height: number, diagonals: boolean): DisjointSets[]
 {
     let setArray:DisjointSets[] = []
     let inheritSets:DisjointSets = undefined;
@@ -140,6 +140,10 @@ function scanWalkabilityRightwards(walkable: Mask, width: number, height: number
                     set.union({x: x-1, y}, {x, y})
                 if(y > 0 && walkable[x][y-1])
                     set.union({x, y: y-1}, {x, y})
+                if(diagonals && x > 0 && y > 0 && walkable[x-1][y-1])
+                    set.union({x: x-1, y: y-1}, {x, y})
+                if(diagonals && x > 0 && y + 1 < height && walkable[x-1][y+1])
+                    set.union({x: x-1, y: y+1}, {x, y})
             }
         }
         setArray[x] = set;
@@ -148,7 +152,7 @@ function scanWalkabilityRightwards(walkable: Mask, width: number, height: number
     return setArray;
 }
 
-function scanWalkabilityLeftwards(walkable: Mask, width: number, height: number): DisjointSets[]
+function scanWalkabilityLeftwards(walkable: Mask, width: number, height: number, diagonals: boolean): DisjointSets[]
 {
     let setArray:DisjointSets[] = []
     let inheritSets:DisjointSets = undefined;
@@ -164,6 +168,10 @@ function scanWalkabilityLeftwards(walkable: Mask, width: number, height: number)
                     set.union({x: x + 1, y}, {x, y})
                 if(y > 0 && walkable[x][y-1])
                     set.union({x, y: y-1}, {x, y})
+                if(diagonals && x + 1 < width && y > 0 && walkable[x+1][y-1])
+                    set.union({x: x+1, y: y-1}, {x, y})
+                if(diagonals && x + 1 < width && y + 1 < height && walkable[x+1][y+1])
+                    set.union({x: x+1, y: y+1}, {x, y})
             }
         }
         setArray[x] = set;
@@ -179,13 +187,15 @@ class WouldBlockTraversalCalculator
     walkable: Mask;
     width: number;
     height: number;
-    constructor(walkable: Mask, width: number, height: number)
+    diagonals: boolean
+    constructor(walkable: Mask, width: number, height: number, diagonals: boolean = false)
     {
         this.walkable = walkable;
         this.width = width;
         this.height = height;
-        this.leftwards = scanWalkabilityLeftwards(walkable, width, height);
-        this.rightwards = scanWalkabilityRightwards(walkable, width, height);
+        this.leftwards = scanWalkabilityLeftwards(walkable, width, height, diagonals);
+        this.rightwards = scanWalkabilityRightwards(walkable, width, height, diagonals);
+        this.diagonals = diagonals;
     }
 
     wouldBlockTraversal(exits: Point[], solid: Mask, solidWidth: number, solidHeight: number, p: Point): boolean
@@ -193,6 +203,7 @@ class WouldBlockTraversalCalculator
         let walkable = this.walkable;
         let width = this.width;
         let height = this.height;
+        let diagonals = this.diagonals;
         
         if(exits.length == 0)
             return false;
@@ -250,6 +261,10 @@ class WouldBlockTraversalCalculator
                     merged.union({x, y}, {x: x-1, y: y})
                 if(y > 0 && isWalkable(x, y-1))
                     merged.union({x, y}, {x: x, y: y-1})
+                if(diagonals && x > p.x -1 && y > 0 && isWalkable(x-1, y-1))
+                    merged.union({x, y}, {x: x-1, y: y-1})
+                if(diagonals && x > p.x -1 && y + 1 < height && isWalkable(x-1, y+1))
+                    merged.union({x, y}, {x: x-1, y: y+1})
             }
         }
         
